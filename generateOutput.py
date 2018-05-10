@@ -6,10 +6,6 @@ import OSC
 
 c = OSC.OSCClient()
 c.connect(('127.0.0.1', 9001))   # localhost, port 57120
-oscmsg = OSC.OSCMessage()
-oscmsg.setAddress("/beat")
-#oscmsg.append('HELLO')
-c.send(oscmsg)
 
 import sys; from PIL import Image; import numpy as np; import curses; import time;
 def displayImage(f):	
@@ -141,6 +137,10 @@ while True:
 	# m.setFrequency(200 + currentBatch / float(totalBatches) * 300)
 	# m.setFrequency(timeDelay * 1000)
 	# m.strike(random.uniform(0.3, 0.5))
+
+	oscmsg = OSC.OSCMessage()
+	oscmsg.setAddress("/beat")
+	c.send(oscmsg)
 
 	"""if random.randint(1, 3) == 1:
 		timeDelay = random.uniform(0.150, 0.200)

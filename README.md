@@ -1,1 +1,5 @@
 # SEA
+
+```
+pip install pyosc
+```
