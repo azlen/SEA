@@ -7,43 +7,79 @@ import OSC
 c = OSC.OSCClient()
 c.connect(('127.0.0.1', 9001))   # localhost, port 57120
 
+
+
+
 import sys; from PIL import Image; import numpy as np; import curses; import time;
-def displayImage(f):	
-	stdscr = curses.initscr()
-	curses.cbreak()
-	curses.noecho()
-	stdscr.keypad(1)
+from moviepy.editor import VideoFileClip;
 
-	try:
-		height,width = stdscr.getmaxyx()
-		
-		#chars = np.asarray(list(' .,:;irsXA253hMHGS#9B&@'))
-		chars = np.asarray(list(' .,-=+*&'))
+display = True
+# chars = np.asarray(list(' .,:;irsXA253hMHGS#9B&@'))
+chars = np.asarray(list('  .,-=+*&'))
 
-		img = Image.open(f)
+def renderImageASCII(stdscr, img):
+		if display:
+			height,width = stdscr.getmaxyx()
+			stdscr.clear()
 
 		img = img.resize((int(img.size[0]*(2.)), img.size[1]))
-		img.thumbnail((width, height))
+		if display:
+			img.thumbnail((width, height))
 
-		img = np.sum( np.asarray( img ), axis=2)
+		img = np.asarray( img )
+	
+		#img = img.reshape([img.shape[0], img.shape[1]])
+
+		img = np.sum(img, axis=2)
 		img -= img.min()
-		img = np.round( (1.0 - img/float(img.max()))*(chars.size-1) )
+		img = np.round( (img/float(img.max()))*(chars.size-1) )
 
 		lines = ["".join(r) for r in chars[img.astype(int)]]
 
-		for i in range(len(lines)):
-			stdscr.addstr(i, (width - img.shape[1])/2, lines[i])
+		if display:
+			try:
+				for i in range(len(lines)):
+					stdscr.addstr((height - img.shape[0])/2 + i, (width - img.shape[1])/2, lines[i])
+			except:
+				pass
 
-		stdscr.refresh()
-		time.sleep(3)
+			stdscr.refresh()
+
+def displayImage(f):	
+	if display:
+		stdscr = curses.initscr()
+		curses.cbreak()
+		curses.noecho()
+		curses.curs_set(0)
+		stdscr.keypad(1)
+
+	try:
+		if f.endswith('gif') or f.endswith('mp4'):
+			clip = VideoFileClip(f)
+			i = 0
+			for frame in clip.iter_frames():
+				i += 1
+				if i > 50:
+					break
+				img = Image.fromarray(frame)
+				renderImageASCII(stdscr, img)
+				
+				time.sleep(0.10)
+		elif f.endswith('png') or f.endswith('jpg') or f.endswith('jpeg'):
+			img = Image.open(f)
+
+			renderImageASCII(stdscr, img)
+			time.sleep(3)
+
 	finally:
-		curses.nocbreak()
-		stdscr.keypad(0)
-		curses.echo()
-		curses.endwin()
+		if display:
+			curses.nocbreak()
+			stdscr.keypad(0)
+			curses.echo()
+			curses.endwin()
 
 	
-#displayImage(sys.argv[1])
+# displayImage(sys.argv[1])
 
 # import chuck as ck
 
@@ -138,9 +174,12 @@ while True:
 	# m.setFrequency(timeDelay * 1000)
 	# m.strike(random.uniform(0.3, 0.5))
 
-	oscmsg = OSC.OSCMessage()
-	oscmsg.setAddress("/beat")
-	c.send(oscmsg)
+	try:
+		oscmsg = OSC.OSCMessage()
+		oscmsg.setAddress("/beat")
+		c.send(oscmsg)
+	except:
+		pass
 
 	"""if random.randint(1, 3) == 1:
 		timeDelay = random.uniform(0.150, 0.200)
@@ -161,6 +200,8 @@ while True:
 		currentBatch 	 = 1
 		epoch			+= 1
 		totalEpochTime	 = 0.0
+
+		displayImage(sys.argv[1])
 
 		if epoch >= niter:
 			break
