@@ -8,14 +8,12 @@ c = OSC.OSCClient()
 c.connect(('127.0.0.1', 9001))   # localhost, port 57120
 
 
-
-
 import sys; from PIL import Image; import numpy as np; import curses; import time;
 from moviepy.editor import VideoFileClip;
 
 display = True
 # chars = np.asarray(list(' .,:;irsXA253hMHGS#9B&@'))
-chars = np.asarray(list('  .,-=+*&'))
+chars = np.asarray(list('  .,-=+*&@'))
 
 def renderImageASCII(stdscr, img):
 		if display:
@@ -34,7 +32,10 @@ def renderImageASCII(stdscr, img):
 		img -= img.min()
 		img = np.round( (img/float(img.max()))*(chars.size-1) )
 
-		lines = ["".join(r) for r in chars[img.astype(int)]]
+		try:
+			lines = ["".join(r) for r in chars[img.astype(int)]]
+		except:
+			return
 
 		if display:
 			try:
@@ -45,31 +46,32 @@ def renderImageASCII(stdscr, img):
 
 			stdscr.refresh()
 
-def displayImage(f):	
+def displayImage(f, duration=0, start=0):	
 	if display:
 		stdscr = curses.initscr()
 		curses.cbreak()
 		curses.noecho()
 		curses.curs_set(0)
 		stdscr.keypad(1)
+		pass
 
 	try:
 		if f.endswith('gif') or f.endswith('mp4'):
 			clip = VideoFileClip(f)
-			i = 0
+
+			duration = duration or clip.duration
+			clip = clip.subclip(start, min(start + duration, clip.duration - start))
+
 			for frame in clip.iter_frames():
-				i += 1
-				if i > 50:
-					break
 				img = Image.fromarray(frame)
 				renderImageASCII(stdscr, img)
 				
-				time.sleep(0.10)
+				time.sleep(1.0 / clip.fps)
 		elif f.endswith('png') or f.endswith('jpg') or f.endswith('jpeg'):
 			img = Image.open(f)
 
 			renderImageASCII(stdscr, img)
-			time.sleep(3)
+			time.sleep(duration or 3)
 
 	finally:
 		if display:
@@ -78,21 +80,7 @@ def displayImage(f):
 			curses.echo()
 			curses.endwin()
 
-	
-# displayImage(sys.argv[1])
-
-# import chuck as ck
-
 timeDelays = [0.169, 0.265, 0.256, 0.257, 0.272, 0.255, 0.263, 0.251, 0.599, 0.169, 0.262, 0.255, 0.261, 0.265, 0.26, 0.254, 0.252, 0.269, 0.583, 0.156, 0.247, 0.26, 0.261, 0.262, 0.251, 0.262, 0.261, 0.262, 0.577, 0.155, 0.263, 0.252, 0.262, 0.254, 0.251, 0.257, 0.263, 0.258, 0.568, 0.159, 0.266, 0.265, 0.264, 0.268, 0.263, 0.256, 0.252, 0.256, 0.571, 0.15, 0.25, 0.272, 0.266, 0.254, 0.267, 0.258, 0.255, 0.255, 0.563, 0.151, 0.264, 0.261, 0.265, 0.267, 0.263, 0.261, 0.259, 0.266, 0.562, 0.166, 0.271, 0.251, 0.259, 0.259, 0.251, 0.277, 0.17, 0.239, 0.254, 0.259, 0.249, 0.247, 0.251, 0.261, 0.551, 0.16, 0.246, 0.26, 0.253, 0.261, 0.261, 0.254, 0.29, 0.253, 0.578, 0.166, 0.253, 0.256, 0.257, 0.264, 0.266, 0.253, 0.248, 0.26, 0.588, 0.165, 0.258, 0.26, 0.261, 0.249, 0.254, 0.247, 0.254, 0.25, 0.564, 0.156, 0.257, 0.247, 0.265, 0.249, 0.249, 0.254, 0.263, 0.256, 0.555, 0.167, 0.261, 0.255, 0.249, 0.256, 0.252, 0.259, 0.266, 0.265, 0.545, 0.157, 0.252, 0.245, 0.258, 0.247, 0.253, 0.257, 0.272, 0.248, 0.566, 0.158, 0.262, 0.25, 0.262, 0.255, 0.247, 0.258, 0.157, 0.249, 0.268, 0.249, 0.249, 0.254, 0.252, 0.264, 0.561, 0.155, 0.246, 0.249, 0.252, 0.265, 0.263, 0.249, 0.269, 0.258, 0.544, 0.157, 0.256, 0.269, 0.266, 0.257, 0.25, 0.263, 0.249, 0.253, 0.546, 0.162, 0.262, 0.262, 0.267, 0.265, 0.255, 0.267, 0.254, 0.264, 0.553, 0.164, 0.262, 0.249, 0.263, 0.248, 0.263, 0.261, 0.267, 0.247, 0.557, 0.16, 0.25, 0.275, 0.253, 0.269, 0.248, 0.262, 0.252, 0.249, 0.546, 0.165, 0.252, 0.263, 0.271, 0.263, 0.265, 0.274, 0.26, 0.252, 0.554, 0.161, 0.247, 0.253, 0.269, 0.265, 0.261]
-
-# ck.init()
-
-# m = ck.Bowed()
-# m.connect()
-
-# m.startBowing(0.5)
-
-#m.preset(1)
 
 time.sleep(0.3)
 
@@ -170,10 +158,6 @@ while True:
 	err_G		= random.uniform(0.4, 1.6)
 	err_D		= random.uniform(0.4, 1.6)
 
-	# m.setFrequency(200 + currentBatch / float(totalBatches) * 300)
-	# m.setFrequency(timeDelay * 1000)
-	# m.strike(random.uniform(0.3, 0.5))
-
 	try:
 		oscmsg = OSC.OSCMessage()
 		oscmsg.setAddress("/beat")
@@ -181,10 +165,6 @@ while True:
 	except:
 		pass
 
-	"""if random.randint(1, 3) == 1:
-		timeDelay = random.uniform(0.150, 0.200)
-	elif random.randint(1, 4) == 1:
-		timeDelay = random.uniform(0.600, 0.700)"""
 
 	totalEpochTime += timeDelay
 
@@ -201,7 +181,7 @@ while True:
 		epoch			+= 1
 		totalEpochTime	 = 0.0
 
-		displayImage(sys.argv[1])
+		# displayImage("path/to/image_video_or_gif", duration , start)
 
 		if epoch >= niter:
 			break
